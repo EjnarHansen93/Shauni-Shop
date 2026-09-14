@@ -252,7 +252,7 @@
     for(var i=0;i<state.months.length;i++){ if(state.months[i].id===mid){ state.months[i].rows.unshift({id:uid(),articleId:"",qty:"",sold:""}); break; } }
     render(); scheduleSave();
   }
-  function addArticle(){ state.stock.push({id:uid(),name:"",qty:"",buy:""}); render(); scheduleSave(); }
+  function addArticle(){ state.stock.unshift({id:uid(),name:"",qty:"",buy:""}); render(); scheduleSave(); }
 
   function doDelete(){
     if(!pending) return;
