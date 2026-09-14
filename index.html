@@ -107,6 +107,7 @@
   .greyPrice{display:block; text-align:right; color:var(--grey); font-size:14px; padding:8px 4px;}
   .winst{display:block; text-align:right; font-weight:600; font-size:14px; padding:8px 4px;}
   .soldTag{display:inline-block; margin-top:6px; font-size:11px; color:var(--rose); background:var(--roseSoft); border-radius:6px; padding:2px 8px;}
+  .soldDate{display:inline-block; margin-top:6px; margin-left:6px; font-size:11px; color:var(--grey);}
   .remainNote{display:block; text-align:right; font-size:11px; color:var(--grey); margin-top:3px;}
   .iconBtn{border:1px solid var(--line); background:#fff; color:var(--rose); border-radius:9px; width:32px; height:32px; cursor:pointer; font-size:13px;}
   .iconBtnSm{border:none; background:transparent; color:var(--grey); cursor:pointer; font-size:15px; padding:6px;}
@@ -221,6 +222,18 @@
   }
 
   /* ---- afgeleide berekeningen ---- */
+  var MA=["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
+  function pad2(n){ n=String(n); return n.length<2?("0"+n):n; }
+  function todayISO(){ var d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+  function fmtDate(iso){ if(!iso) return ""; var p=String(iso).split("-"); if(p.length<3) return iso; var m=parseInt(p[1],10)-1; return parseInt(p[2],10)+" "+(MA[m]||"")+" "+p[0]; }
+  function syncSoldOut(){
+    var sm=stockMap(), sq=soldQtyMap();
+    state.stock.forEach(function(s){
+      if(isSoldOut(s.id,sm,sq)){ if(!s.soldOutAt) s.soldOutAt=todayISO(); }
+      else if(s.soldOutAt){ delete s.soldOutAt; }
+    });
+  }
+
   function stockMap(){ var m={}; state.stock.forEach(function(s){ m[s.id]=s; }); return m; }
   function soldQtyMap(){ var m={}; state.months.forEach(function(mo){ mo.rows.forEach(function(r){ if(r.articleId){ m[r.articleId]=(m[r.articleId]||0)+parseNum(r.qty); } }); }); return m; }
   function remaining(sid, sm, sq){ var s=sm[sid]; if(!s) return 0; return parseNum(s.qty) - (sq[sid]||0); }
@@ -265,6 +278,7 @@
 
   /* ---- render ---- */
   function render(){
+    syncSoldOut();
     var v=el("view");
     if(tab==="verkoop") v.innerHTML=buildVerkoop();
     else if(tab==="stock") v.innerHTML=buildStock();
@@ -340,10 +354,13 @@
     if(state.stock.length===0){ h+='<div class="emptyInline">Nog geen artikelen \u2014 voeg je eerste product toe.</div>'; }
     else{
       h+='<div class="sthead"><span>Product</span><span class="rt">Aantal stuks</span><span class="rt">Aankoop/eenheid</span><span class="rt">Totaal verdiend</span><span></span></div>';
-      state.stock.forEach(function(s){
+      var avail=[], soldA=[];
+      state.stock.forEach(function(s){ if(isSoldOut(s.id,sm,sq)) soldA.push(s); else avail.push(s); });
+      soldA.sort(function(a,b){ var da=a.soldOutAt||"", db=b.soldOutAt||""; if(da<db) return 1; if(da>db) return -1; return 0; });
+      avail.concat(soldA).forEach(function(s){
         var rem=remaining(s.id,sm,sq); var sold=isSoldOut(s.id,sm,sq);
         h+='<div class="srow">';
-        h+='<div class="cell"><span class="flabel">Product</span><input class="inp" data-field="sname" data-sid="'+s.id+'" value="'+escA(s.name)+'" placeholder="Productnaam">'+(sold?'<span class="soldTag">uitverkocht</span>':'')+'</div>';
+        h+='<div class="cell"><span class="flabel">Product</span><input class="inp" data-field="sname" data-sid="'+s.id+'" value="'+escA(s.name)+'" placeholder="Productnaam">'+(sold?'<span class="soldTag">uitverkocht</span>'+(s.soldOutAt?'<span class="soldDate">'+fmtDate(s.soldOutAt)+'</span>':''):'')+'</div>';
         h+='<div class="cell rt"><span class="flabel">Aantal stuks</span><input class="inp rt" inputmode="decimal" data-field="sqty" data-sid="'+s.id+'" value="'+escA(s.qty)+'" placeholder="0">'+(parseNum(s.qty)>0?'<span class="remainNote" data-srem="'+s.id+'">nog '+rem+' te verkopen</span>':'<span class="remainNote" data-srem="'+s.id+'"></span>')+'</div>';
         h+='<div class="cell rt"><span class="flabel">Aankoop/eenheid</span><input class="inp rt" inputmode="decimal" data-field="sbuy" data-sid="'+s.id+'" value="'+escA(s.buy)+'" placeholder="\u20ac 0"></div>';
         var e=articleEarned(s.id,sm); var ec=(e>=0)?"var(--win)":"var(--rose)";
@@ -425,7 +442,7 @@
     if(!f) return;
     if(f==="qty"||f==="sold"){ var r=findRow(el2.getAttribute("data-mid"), el2.getAttribute("data-rid")); if(r){ r[f==="qty"?"qty":"sold"]=el2.value; } }
     else if(f==="sname"||f==="sqty"||f==="sbuy"){ var s=findArticle(el2.getAttribute("data-sid")); if(s){ s[f==="sname"?"name":(f==="sqty"?"qty":"buy")]=el2.value; } }
-    updateDerived(); scheduleSave();
+    syncSoldOut(); updateDerived(); scheduleSave();
   });
   view.addEventListener("change", function(e){
     var el2=e.target;
