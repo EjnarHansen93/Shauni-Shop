@@ -372,7 +372,7 @@
     h+='<div class="heroStats"><div><div class="miniLabel">Voorraadwaarde</div><div class="miniValue" data-hero="a" style="color:var(--gold);">'+euro(vw)+'</div></div>';
     h+='<div><div class="miniLabel">Artikelen</div><div class="miniValue" data-hero="b">'+state.stock.length+'</div></div></div></section>';
 
-    h+='<div class="actionRow"><button class="goldBtn" data-addart="1">+ Nieuw artikel</button></div>';
+    h+='<button class="goldBtn wide" data-addart="1" style="margin-bottom:14px;">+ Nieuw artikel</button>';
     h+='<section class="card">';
     if(state.stock.length===0){ h+='<div class="emptyInline">Nog geen artikelen \u2014 voeg je eerste product toe.</div>'; }
     else{
