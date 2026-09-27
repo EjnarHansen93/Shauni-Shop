@@ -27,6 +27,7 @@ Gedeelde gsm-webapp waarmee Ejnar en Shauni hun online doorverkoop bijhouden: aa
                "rows": [{ "id": "r1", "articleId": "abc123", "qty": "1", "sold": "25" }] }]
 }
 ```
+- `stock[].total` (optioneel) = totaal betaald voor de batch. In de app geef je dit in; `buy` (per stuk) wordt dan berekend als `total / qty` (ook opnieuw bij wijziging van `qty`). Alle winstberekeningen blijven `buy` gebruiken. Oude artikelen zonder `total` houden hun `buy`; het veld toont dan `buy × qty`.
 - Getallen worden als tekst bewaard; altijd via `parseNum()` lezen (accepteert komma).
 - Berekeningen: winst per rij = `sold − qty × buy` van het gekoppelde artikel; resterende stock = `stock.qty − som(verkochte qty)`; `soldOutAt` wordt automatisch gezet in `syncSoldOut()`.
 - Maandlabels zijn `"<Maand> <jaar>"` met de Nederlandse namen uit `MONTHS`.

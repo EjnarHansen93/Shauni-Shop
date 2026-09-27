@@ -112,6 +112,8 @@
   .editGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;}
   .editInfo{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; font-size:13px; color:var(--grey);}
   .winstInl{font-weight:600;}
+  .unitNote{text-align:right; margin-top:6px; font-size:13px; color:var(--grey);}
+  .unitNote [data-sunit]{color:var(--plum); font-weight:600;}
   .editDone{text-align:right; margin-top:8px;}
   .doneBtn{background:var(--plum); color:#fff; border:none; border-radius:10px; padding:8px 18px; font-size:14px; font-weight:600; cursor:pointer;}
   .linkBtn{background:transparent; border:none; color:var(--rose); font-size:13px; cursor:pointer; padding:4px 2px;}
@@ -248,6 +250,14 @@
   function soldQtyMap(){ var m={}; state.months.forEach(function(mo){ mo.rows.forEach(function(r){ if(r.articleId){ m[r.articleId]=(m[r.articleId]||0)+parseNum(r.qty); } }); }); return m; }
   function remaining(sid, sm, sq){ var s=sm[sid]; if(!s) return 0; return parseNum(s.qty) - (sq[sid]||0); }
   function isSoldOut(sid, sm, sq){ var s=sm[sid]; if(!s) return false; var q=parseNum(s.qty); return q>0 && (sq[sid]||0)>=q; }
+  /* totaal betaald voor een batch: 'total' is optioneel; 'buy' (per stuk) blijft de waarde waarmee gerekend wordt */
+  function hasTotal(s){ return s.total!=null && String(s.total)!==""; }
+  function unitFromTotal(s){ var q=parseNum(s.qty); if(!hasTotal(s) || q<=0) return ""; return String(Math.round(parseNum(s.total)/q*10000)/10000); }
+  function totalShown(s){
+    if(hasTotal(s)) return s.total;
+    var b=parseNum(s.buy), q=parseNum(s.qty);
+    return (b>0 && q>0) ? String(Math.round(b*q*100)/100).replace(".",",") : "";
+  }
   function rowWinst(r, sm){ var a=sm[r.articleId]; var bp=a?parseNum(a.buy):0; return parseNum(r.sold) - parseNum(r.qty)*bp; }
   function monthOmzet(m){ var t=0; m.rows.forEach(function(r){ t+=parseNum(r.sold); }); return t; }
   function monthWinst(m, sm){ var t=0; m.rows.forEach(function(r){ t+=rowWinst(r,sm); }); return t; }
@@ -396,8 +406,9 @@
         h+='<span class="elabel">Product</span><input class="inp" data-field="sname" data-sid="'+s.id+'" value="'+escA(s.name)+'" placeholder="Productnaam">';
         h+='<div class="editGrid">';
         h+='<div><span class="elabel">Aantal stuks</span><input class="inp rt" inputmode="decimal" data-field="sqty" data-sid="'+s.id+'" value="'+escA(s.qty)+'" placeholder="0"></div>';
-        h+='<div><span class="elabel">Aankoop/eenheid</span><input class="inp rt" inputmode="decimal" data-field="sbuy" data-sid="'+s.id+'" value="'+escA(s.buy)+'" placeholder="\u20ac 0"></div>';
+        h+='<div><span class="elabel">Totaal betaald</span><input class="inp rt" inputmode="decimal" data-field="stotal" data-sid="'+s.id+'" value="'+escA(totalShown(s))+'" placeholder="\u20ac 0"></div>';
         h+='</div>';
+        h+='<div class="unitNote">= <span data-sunit="'+s.id+'">'+euro(parseNum(s.buy))+'</span> <span>per stuk</span></div>';
         h+='<div class="editInfo"><span><span data-srem="'+s.id+'">'+(parseNum(s.qty)>0?'nog '+rem+' te verkopen':'')+'</span> \u00b7 verdiend <span class="winstInl" data-searn="'+s.id+'" style="color:'+ec+';">'+euro(e)+'</span></span>';
         h+='<button class="linkBtn" data-del="article" data-sid="'+s.id+'">verwijder</button></div>';
         h+='<div class="editDone"><button class="doneBtn" data-closeart="1">Klaar</button></div>';
@@ -463,6 +474,7 @@
     state.months.forEach(function(m){ var wb=document.querySelector('[data-wbar="'+m.id+'"]'); if(wb){ var pct=Math.min(100,(Math.abs(monthWinst(m,sm))/maxw)*100); wb.style.width=pct+"%"; } });
     state.stock.forEach(function(s){
       var se=document.querySelector('[data-searn="'+s.id+'"]'); if(se){ var e=articleEarned(s.id,sm); se.textContent=euro(e); se.style.color=(e>=0)?"var(--win)":"var(--rose)"; }
+      var su=document.querySelector('[data-sunit="'+s.id+'"]'); if(su){ su.textContent=euro(parseNum(s.buy)); }
       var sr=document.querySelector('[data-srem="'+s.id+'"]'); if(sr){ sr.textContent=(parseNum(s.qty)>0)?("nog "+remaining(s.id,sm,sq)+" te verkopen"):""; }
     });
   }
@@ -477,7 +489,14 @@
     var el2=e.target, f=el2.getAttribute("data-field");
     if(!f) return;
     if(f==="qty"||f==="sold"){ var r=findRow(el2.getAttribute("data-mid"), el2.getAttribute("data-rid")); if(r){ r[f==="qty"?"qty":"sold"]=el2.value; } }
-    else if(f==="sname"||f==="sqty"||f==="sbuy"){ var s=findArticle(el2.getAttribute("data-sid")); if(s){ s[f==="sname"?"name":(f==="sqty"?"qty":"buy")]=el2.value; } }
+    else if(f==="sname"||f==="sqty"||f==="stotal"){
+      var s=findArticle(el2.getAttribute("data-sid"));
+      if(s){
+        if(f==="sname") s.name=el2.value;
+        else if(f==="sqty"){ s.qty=el2.value; if(hasTotal(s)) s.buy=unitFromTotal(s); }
+        else { s.total=el2.value; s.buy=unitFromTotal(s); }
+      }
+    }
     syncSoldOut(); updateDerived(); scheduleSave();
   });
   view.addEventListener("change", function(e){
