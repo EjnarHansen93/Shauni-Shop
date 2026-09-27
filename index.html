@@ -119,6 +119,7 @@
   .sale.soldOut .saleName{color:var(--grey);}
   .listSub{font-size:12px; color:var(--grey); padding:16px 2px 6px; border-top:1px solid var(--line);}
   .monthFoot{display:flex; justify-content:flex-end; gap:14px; margin-top:6px; padding-top:6px; border-top:1px solid var(--line);}
+  .goldBtn.wide{display:block; width:100%; padding:13px 18px; font-size:15px; margin:0 0 10px;}
   .actionRow.center{justify-content:center; margin-top:4px;}
 
   .inp{width:100%; border:1px solid var(--line); border-radius:9px; padding:8px 10px; font-size:15px; color:var(--ink); background:#fff;}
@@ -320,7 +321,7 @@
       h+='</button>';
       if(!open){ h+='</section>'; return; }
 
-      h+='<div class="actionRow"><button class="goldBtn" data-addrow="'+m.id+'">+ Verkoop toevoegen</button></div>';
+      h+='<button class="goldBtn wide" data-addrow="'+m.id+'">+ Verkoop toevoegen</button>';
       if(m.rows.length===0){ h+='<div class="emptyInline">Nog geen verkopen deze maand.</div>'; }
       m.rows.forEach(function(r){
         var a=sm[r.articleId]; var bp=a?parseNum(a.buy):0;
