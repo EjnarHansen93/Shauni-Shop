@@ -11,6 +11,7 @@ Gedeelde gsm-webapp waarmee Ejnar en Shauni hun online doorverkoop bijhouden: aa
 ## Opbouw
 - **Alles zit in één bestand: `index.html`** (HTML + CSS + vanilla JS in een IIFE, geen build-stap, geen dependencies).
 - Drie tabs: **Verkoop** (`buildVerkoop`), **Stocklijst** (`buildStock`), **Winst** (`buildWinst`).
+- Verkoop-tab: maanden zijn inklapbaar (standaard enkel de bovenste open, `monthOpen`), verkopen staan als één lijn en er is er telkens één open om te bewerken (`openRow`). Die weergavestatus wordt niet bewaard.
 - Na elke wijziging: `render()` + `scheduleSave()` (debounce 700 ms → `doSave`).
 - Sync tussen toestellen: `pull(true)` elke 9 s als de pagina zichtbaar is; lokale cache in localStorage `ss_cache`.
 

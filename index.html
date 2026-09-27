@@ -88,18 +88,42 @@
 
   .card{background:var(--surface); border-radius:20px; padding:18px; margin-bottom:18px;
     border:1px solid var(--line); box-shadow:0 8px 24px rgba(94,27,52,.06);}
-  .monthHead{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
-  .monthTitle{flex:1; min-width:0; font-family:var(--serif); font-size:25px; font-weight:600;
-    color:var(--plum); border:none; background:transparent; padding:2px 0;}
-  .monthTotals{text-align:right; white-space:nowrap;}
-  .monthOmzet{font-family:var(--serif); font-size:23px; font-weight:600; color:var(--plum);}
-  .monthWinst{font-size:12px; color:var(--gold); margin-top:2px;}
-  .rowAdd{margin:6px 0 12px;}
+  .card.closed{padding:12px 18px;}
+  .monthHead{display:flex; align-items:center; gap:10px; width:100%; border:none; background:transparent; padding:0; margin:0 0 10px; cursor:pointer; text-align:left; font:inherit; color:inherit;}
+  .card.closed .monthHead{margin-bottom:0;}
+  .monthTitle{flex:1; min-width:0; font-family:var(--serif); font-size:23px; font-weight:600; color:var(--plum);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .chev{display:inline-block; font-family:var(--sans); font-size:13px; color:var(--rose); margin-right:8px; transition:transform .15s; vertical-align:3px;}
+  .chev.on{transform:rotate(90deg);}
+  .monthTotals{text-align:right; white-space:nowrap; display:flex; flex-direction:column;}
+  .monthOmzet{font-family:var(--serif); font-size:21px; font-weight:600; color:var(--plum);}
+  .monthWinst{font-size:12px; color:var(--gold); margin-top:1px;}
 
-  .thead,.row{display:grid; grid-template-columns:minmax(120px,1.6fr) .9fr .7fr 1fr .9fr 34px; gap:10px; align-items:center;}
+  .sale{display:flex; justify-content:space-between; align-items:baseline; gap:10px; width:100%; background:transparent;
+    border:none; border-top:1px solid var(--line); padding:12px 2px; cursor:pointer; text-align:left; font:inherit; font-size:15px; color:var(--ink);}
+  .saleLeft{flex:1; min-width:0; display:flex; align-items:baseline;}
+  .saleName{min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .saleNone{color:var(--grey); font-style:italic;}
+  .saleQty{flex:0 0 auto; color:var(--grey); font-size:13px; margin-left:6px;}
+  .saleAmt{white-space:nowrap; font-size:14px;}
+  .saleWin{font-weight:600; margin-left:8px;}
+  .saleEdit{background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:12px; margin:4px 0 8px;}
+  .elabel{display:block; font-size:11px; color:var(--grey); margin-bottom:4px;}
+  .editGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;}
+  .editInfo{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; font-size:13px; color:var(--grey);}
+  .winstInl{font-weight:600;}
+  .editDone{text-align:right; margin-top:8px;}
+  .doneBtn{background:var(--plum); color:#fff; border:none; border-radius:10px; padding:8px 18px; font-size:14px; font-weight:600; cursor:pointer;}
+  .linkBtn{background:transparent; border:none; color:var(--rose); font-size:13px; cursor:pointer; padding:4px 2px;}
+  .linkBtn.grey{color:var(--grey);}
+  .addSale{display:block; width:100%; background:transparent; border:1px dashed var(--rose); border-radius:12px; padding:10px;
+    color:var(--plum); font-size:14px; font-weight:600; cursor:pointer; margin:0 0 6px;}
+  .monthFoot{display:flex; justify-content:flex-end; gap:14px; margin-top:6px; padding-top:6px; border-top:1px solid var(--line);}
+  .actionRow.center{justify-content:center; margin-top:4px;}
+
   .sthead,.srow{display:grid; grid-template-columns:minmax(140px,1.8fr) .9fr 1fr 1fr 34px; gap:10px; align-items:start;}
-  .thead,.sthead{color:var(--grey); font-size:12px; padding:0 4px 8px; border-bottom:1px solid var(--line); margin-bottom:8px;}
-  .row,.srow{padding:8px 4px; border-bottom:1px solid var(--line);}
+  .sthead{color:var(--grey); font-size:12px; padding:0 4px 8px; border-bottom:1px solid var(--line); margin-bottom:8px;}
+  .srow{padding:8px 4px; border-bottom:1px solid var(--line);}
   .flabel{display:none;}
   .inp{width:100%; border:1px solid var(--line); border-radius:9px; padding:8px 10px; font-size:15px; color:var(--ink); background:#fff;}
   .sel{width:100%; border:1px solid var(--line); border-radius:9px; padding:8px 10px; font-size:15px; color:var(--ink); background:#fff; cursor:pointer;}
@@ -132,9 +156,9 @@
   .deleteBtn{background:var(--rose); border:none; color:#fff; padding:9px 16px; border-radius:10px; cursor:pointer; font-size:14px; font-weight:600;}
 
   @media (max-width:660px){
-    .thead,.sthead{display:none;}
-    .row,.srow{grid-template-columns:1fr 1fr; gap:8px 12px; padding:12px; border:1px solid var(--line); border-radius:14px; margin-bottom:10px; background:#fff;}
-    .row .cell:first-child,.srow .cell:first-child{grid-column:1 / -1;}
+    .sthead{display:none;}
+    .srow{grid-template-columns:1fr 1fr; gap:8px 12px; padding:12px; border:1px solid var(--line); border-radius:14px; margin-bottom:10px; background:#fff;}
+    .srow .cell:first-child{grid-column:1 / -1;}
     .flabel{display:block; font-size:11px; color:var(--grey); margin-bottom:3px;}
     .del{grid-column:1 / -1; justify-self:end;}
   }
@@ -204,6 +228,8 @@
   var pending = null;
   var dirty = false;
   var saveTimer = null;
+  var openRow = null;    /* "maandId:rijId" van de verkoop die open staat (alleen weergave, niet bewaard) */
+  var monthOpen = {};    /* maandId -> true/false; standaard staat enkel de bovenste maand open */
 
   function uid(){ return Math.random().toString(36).slice(2,10); }
   function parseNum(v){ var n = parseFloat(String(v==null?"":v).replace(",",".")); return isNaN(n)?0:n; }
@@ -258,11 +284,15 @@
     else { var now=new Date(); mi=now.getMonth(); y=now.getFullYear(); }
     var label=MONTHS[mi]+" "+y, guard=0;
     while(guard<60){ var dup=false; for(var i=0;i<state.months.length;i++){ if(state.months[i].label===label){dup=true;break;} } if(!dup) break; mi++; if(mi>11){mi=0;y++;} label=MONTHS[mi]+" "+y; guard++; }
-    state.months.unshift({ id:uid(), label:label, rows:[] });
+    var nm={ id:uid(), label:label, rows:[] };
+    state.months.unshift(nm);
+    for(var k in monthOpen) monthOpen[k]=false;
+    monthOpen[nm.id]=true; openRow=null;
     render(); scheduleSave();
+    var sec=document.querySelector('[data-month="'+nm.id+'"]'); if(sec) sec.scrollIntoView({behavior:"smooth", block:"start"});
   }
   function addRow(mid){
-    for(var i=0;i<state.months.length;i++){ if(state.months[i].id===mid){ state.months[i].rows.unshift({id:uid(),articleId:"",qty:"",sold:""}); break; } }
+    for(var i=0;i<state.months.length;i++){ if(state.months[i].id===mid){ var nr={id:uid(),articleId:"",qty:"",sold:""}; state.months[i].rows.unshift(nr); openRow=mid+":"+nr.id; monthOpen[mid]=true; break; } }
     render(); scheduleSave();
   }
   function addArticle(){ state.stock.unshift({id:uid(),name:"",qty:"",buy:""}); render(); scheduleSave(); }
@@ -296,47 +326,56 @@
     h+='<div class="heroStats"><div><div class="miniLabel">Winst</div><div class="miniValue" data-hero="a" style="color:var(--gold);">'+euro(t.winst)+'</div></div>';
     h+='<div><div class="miniLabel">Verkopen</div><div class="miniValue" data-hero="b">'+t.count+'</div></div></div></section>';
 
-    h+='<div class="actionRow"><button class="goldBtn" data-addmonth="1">+ Nieuwe maand</button></div>';
+    if(state.months.length===0){ h+='<div class="card"><div class="emptyInline">Nog geen maanden \u2014 voeg er een toe.</div></div>'; }
 
-    if(state.months.length===0){ h+='<div class="card"><div class="emptyInline">Nog geen maanden \u2014 voeg er een toe.</div></div>'; return h; }
+    state.months.forEach(function(m, mi){
+      var open=isMonthOpen(m, mi);
+      h+='<section class="card'+(open?'':' closed')+'" data-month="'+m.id+'">';
+      h+='<button class="monthHead" data-togglemonth="'+m.id+'">';
+      h+='<span class="monthTitle"><span class="chev'+(open?' on':'')+'">\u25b8</span>'+escA(m.label)+'</span>';
+      h+='<span class="monthTotals"><span class="monthOmzet" data-omzet="'+m.id+'">'+euro(monthOmzet(m))+'</span><span class="monthWinst">winst <span data-winst="'+m.id+'">'+euro(monthWinst(m,sm))+'</span></span></span>';
+      h+='</button>';
+      if(!open){ h+='</section>'; return; }
 
-    state.months.forEach(function(m){
-      h+='<section class="card">';
-      h+='<div class="monthHead">';
-      h+='<input class="monthTitle" data-mrename="'+m.id+'" value="'+escA(m.label)+'">';
-      h+='<div class="monthTotals"><div class="monthOmzet" data-omzet="'+m.id+'">'+euro(monthOmzet(m))+'</div><div class="monthWinst">winst <span data-winst="'+m.id+'">'+euro(monthWinst(m,sm))+'</span></div></div>';
-      h+='<button class="iconBtn" data-del="month" data-mid="'+m.id+'" title="Maand verwijderen">\u2715</button>';
-      h+='</div>';
-      h+='<div class="rowAdd"><button class="roseBtn" data-addrow="'+m.id+'">+ Nieuwe rij</button></div>';
-
-      if(m.rows.length===0){ h+='<div class="emptyInline">Nog geen verkopen deze maand \u2014 voeg je eerste rij toe.</div>'; }
-      else{
-        h+='<div class="thead"><span>Artikel</span><span class="rt">Aankoop/stuk</span><span class="rt">Aantal</span><span class="rt">Verkocht voor</span><span class="rt">Winst</span><span></span></div>';
-        m.rows.forEach(function(r){
-          var a=sm[r.articleId]; var bp=a?parseNum(a.buy):0;
-          h+='<div class="row">';
-          h+='<div class="cell"><span class="flabel">Artikel</span><select class="sel" data-field="article" data-mid="'+m.id+'" data-rid="'+r.id+'">';
-          h+='<option value="">Kies artikel\u2026</option>';
-          state.stock.forEach(function(s){
-            if(isSoldOut(s.id,sm,sq) && s.id!==r.articleId) return;
-            var sel=(s.id===r.articleId)?' selected':'';
-            var nm=(s.name||"(naamloos)")+(isSoldOut(s.id,sm,sq)?" \u2014 uitverkocht":"");
-            h+='<option value="'+s.id+'"'+sel+'>'+escA(nm)+'</option>';
-          });
-          h+='</select></div>';
-          h+='<div class="cell rt"><span class="flabel">Aankoop/stuk</span><span class="greyPrice">'+(a?euro(bp):"\u2014")+'</span></div>';
-          h+='<div class="cell rt"><span class="flabel">Aantal</span><input class="inp rt" inputmode="decimal" data-field="qty" data-mid="'+m.id+'" data-rid="'+r.id+'" value="'+escA(r.qty)+'" placeholder="0"></div>';
-          h+='<div class="cell rt"><span class="flabel">Verkocht voor</span><input class="inp rt" inputmode="decimal" data-field="sold" data-mid="'+m.id+'" data-rid="'+r.id+'" value="'+escA(r.sold)+'" placeholder="\u20ac 0"></div>';
-          var w=rowWinst(r,sm); var wc=(w>=0)?"var(--win)":"var(--rose)"; var wt=(r.sold||r.qty)?euro(w):"\u2014";
-          h+='<div class="cell rt"><span class="flabel">Winst</span><span class="winst" data-rwinst="'+m.id+":"+r.id+'" style="color:'+wc+';">'+wt+'</span></div>';
-          h+='<div class="cell del"><button class="iconBtnSm" data-del="row" data-mid="'+m.id+'" data-rid="'+r.id+'" title="Rij verwijderen">\u2715</button></div>';
-          h+='</div>';
+      h+='<button class="addSale" data-addrow="'+m.id+'">+ Verkoop toevoegen</button>';
+      if(m.rows.length===0){ h+='<div class="emptyInline">Nog geen verkopen deze maand.</div>'; }
+      m.rows.forEach(function(r){
+        var a=sm[r.articleId]; var bp=a?parseNum(a.buy):0;
+        var w=rowWinst(r,sm); var wc=(w>=0)?"var(--win)":"var(--rose)"; var has=(r.sold||r.qty);
+        if(openRow!==m.id+":"+r.id){
+          h+='<button class="sale" data-openrow="'+m.id+":"+r.id+'">';
+          h+='<span class="saleLeft"><span class="saleName">'+(a?escA(a.name||"(naamloos)"):'<span class="saleNone">Kies artikel\u2026</span>')+'</span>'+(r.qty?'<span class="saleQty">'+escA(r.qty)+'\u00d7</span>':'')+'</span>';
+          h+='<span class="saleAmt">'+(r.sold?euro(parseNum(r.sold)):"\u2014")+(has?'<span class="saleWin" style="color:'+wc+';">'+(w>=0?"+":"")+euro(w)+'</span>':'')+'</span>';
+          h+='</button>';
+          return;
+        }
+        h+='<div class="saleEdit">';
+        h+='<span class="elabel">Artikel</span><select class="sel" data-field="article" data-mid="'+m.id+'" data-rid="'+r.id+'">';
+        h+='<option value="">Kies artikel\u2026</option>';
+        state.stock.forEach(function(s){
+          if(isSoldOut(s.id,sm,sq) && s.id!==r.articleId) return;
+          var sel=(s.id===r.articleId)?' selected':'';
+          var nm=(s.name||"(naamloos)")+(isSoldOut(s.id,sm,sq)?" \u2014 uitverkocht":"");
+          h+='<option value="'+s.id+'"'+sel+'>'+escA(nm)+'</option>';
         });
-      }
+        h+='</select>';
+        h+='<div class="editGrid">';
+        h+='<div><span class="elabel">Aantal</span><input class="inp rt" inputmode="decimal" data-field="qty" data-mid="'+m.id+'" data-rid="'+r.id+'" value="'+escA(r.qty)+'" placeholder="0"></div>';
+        h+='<div><span class="elabel">Verkocht voor</span><input class="inp rt" inputmode="decimal" data-field="sold" data-mid="'+m.id+'" data-rid="'+r.id+'" value="'+escA(r.sold)+'" placeholder="\u20ac 0"></div>';
+        h+='</div>';
+        h+='<div class="editInfo"><span>aankoop '+(a?euro(bp)+'/st':'\u2014')+' \u00b7 winst <span class="winstInl" data-rwinst="'+m.id+":"+r.id+'" style="color:'+wc+';">'+(has?euro(w):"\u2014")+'</span></span>';
+        h+='<button class="linkBtn" data-del="row" data-mid="'+m.id+'" data-rid="'+r.id+'">verwijder</button></div>';
+        h+='<div class="editDone"><button class="doneBtn" data-closerow="1">Klaar</button></div>';
+        h+='</div>';
+      });
+      h+='<div class="monthFoot"><button class="linkBtn grey" data-mrename="'+m.id+'">naam wijzigen</button><button class="linkBtn grey" data-del="month" data-mid="'+m.id+'">maand verwijderen</button></div>';
       h+='</section>';
     });
+
+    h+='<div class="actionRow center"><button class="goldBtn" data-addmonth="1">+ Nieuwe maand</button></div>';
     return h;
   }
+  function isMonthOpen(m, i){ return (m.id in monthOpen) ? monthOpen[m.id] : i===0; }
 
   function buildStock(){
     var sm=stockMap(), sq=soldQtyMap(), t=totals(sm);
@@ -438,7 +477,6 @@
   var view=el("view");
   view.addEventListener("input", function(e){
     var el2=e.target, f=el2.getAttribute("data-field");
-    if(el2.hasAttribute("data-mrename")){ var m=findMonth(el2.getAttribute("data-mrename")); if(m){ m.label=el2.value; scheduleSave(); } return; }
     if(!f) return;
     if(f==="qty"||f==="sold"){ var r=findRow(el2.getAttribute("data-mid"), el2.getAttribute("data-rid")); if(r){ r[f==="qty"?"qty":"sold"]=el2.value; } }
     else if(f==="sname"||f==="sqty"||f==="sbuy"){ var s=findArticle(el2.getAttribute("data-sid")); if(s){ s[f==="sname"?"name":(f==="sqty"?"qty":"buy")]=el2.value; } }
@@ -456,9 +494,13 @@
     if(b.hasAttribute("data-addmonth")){ addMonth(); return; }
     if(b.hasAttribute("data-addart")){ addArticle(); return; }
     if(b.hasAttribute("data-addrow")){ addRow(b.getAttribute("data-addrow")); return; }
+    if(b.hasAttribute("data-togglemonth")){ var tm=findMonth(b.getAttribute("data-togglemonth")); if(tm){ monthOpen[tm.id]=!isMonthOpen(tm, state.months.indexOf(tm)); render(); } return; }
+    if(b.hasAttribute("data-openrow")){ openRow=b.getAttribute("data-openrow"); render(); return; }
+    if(b.hasAttribute("data-closerow")){ openRow=null; render(); return; }
+    if(b.hasAttribute("data-mrename")){ var rm=findMonth(b.getAttribute("data-mrename")); if(rm){ var nl=window.prompt("Nieuwe naam voor deze maand:", rm.label); if(nl && nl.trim()){ rm.label=nl.trim(); render(); scheduleSave(); } } return; }
     var dk=b.getAttribute("data-del");
     if(dk==="month"){ var m=findMonth(b.getAttribute("data-mid")); pending={kind:"month",mid:b.getAttribute("data-mid"),text:'Maand "'+(m?m.label:"")+'" met alle rijen verwijderen?'}; renderModal(); }
-    else if(dk==="row"){ pending={kind:"row",mid:b.getAttribute("data-mid"),rid:b.getAttribute("data-rid"),text:"Deze rij verwijderen?"}; renderModal(); }
+    else if(dk==="row"){ pending={kind:"row",mid:b.getAttribute("data-mid"),rid:b.getAttribute("data-rid"),text:"Deze verkoop verwijderen?"}; renderModal(); }
     else if(dk==="article"){ var s=findArticle(b.getAttribute("data-sid")); pending={kind:"article",sid:b.getAttribute("data-sid"),text:'Artikel "'+(s&&s.name?s.name:"(naamloos)")+'" verwijderen?'}; renderModal(); }
   });
 
