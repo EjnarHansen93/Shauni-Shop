@@ -310,11 +310,23 @@
     updateDerived();
   }
 
+  /* maand voor het omzetblok: de maand van vandaag, anders de bovenste maand */
+  function heroMonth(){
+    var now=new Date();
+    for(var i=0;i<state.months.length;i++){ var p=parseLabel(state.months[i].label); if(p && p.mi===now.getMonth() && p.y===now.getFullYear()) return state.months[i]; }
+    return state.months[0]||null;
+  }
+  function monthTotals(m, sm){
+    if(!m) return {omzet:0, winst:0, count:0};
+    var c=0; m.rows.forEach(function(r){ if(r.articleId) c++; });
+    return {omzet:monthOmzet(m), winst:monthWinst(m,sm), count:c};
+  }
+
   function buildVerkoop(){
-    var sm=stockMap(), sq=soldQtyMap(), t=totals(sm);
+    var sm=stockMap(), sq=soldQtyMap(), hm=heroMonth(), t=monthTotals(hm, sm);
     var h="";
     h+='<section class="hero">';
-    h+='<div class="heroLabel">Totale omzet</div>';
+    h+='<div class="heroLabel">Omzet '+(hm?escA(hm.label):'deze maand')+'</div>';
     h+='<div class="heroNumber" data-hero="big">'+euro(t.omzet)+'</div>';
     h+='<div class="heroRule"></div>';
     h+='<div class="heroStats"><div><div class="miniLabel">Winst</div><div class="miniValue" data-hero="a" style="color:var(--gold);">'+euro(t.winst)+'</div></div>';
@@ -455,7 +467,7 @@
     var a=document.querySelector('[data-hero="a"]');
     var b=document.querySelector('[data-hero="b"]');
     if(big&&a&&b){
-      if(tab==="verkoop"){ big.textContent=euro(t.omzet); a.textContent=euro(t.winst); b.textContent=t.count; }
+      if(tab==="verkoop"){ var mt=monthTotals(heroMonth(), sm); big.textContent=euro(mt.omzet); a.textContent=euro(mt.winst); b.textContent=mt.count; }
       else if(tab==="stock"){ var vw=0; state.stock.forEach(function(x){ var rem=remaining(x.id,sm,sq); vw+=(rem>0?rem:0)*parseNum(x.buy); }); big.textContent=euro(t.winst); a.textContent=euro(vw); b.textContent=state.stock.length; }
       else { big.textContent=euro(t.winst); big.style.color=(t.winst>=0?"var(--plum)":"var(--rose)"); a.textContent=euro(t.omzet); b.textContent=state.months.length; }
     }
