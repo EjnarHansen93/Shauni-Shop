@@ -116,25 +116,14 @@
   .doneBtn{background:var(--plum); color:#fff; border:none; border-radius:10px; padding:8px 18px; font-size:14px; font-weight:600; cursor:pointer;}
   .linkBtn{background:transparent; border:none; color:var(--rose); font-size:13px; cursor:pointer; padding:4px 2px;}
   .linkBtn.grey{color:var(--grey);}
-  .addSale{display:block; width:100%; background:transparent; border:1px dashed var(--rose); border-radius:12px; padding:10px;
-    color:var(--plum); font-size:14px; font-weight:600; cursor:pointer; margin:0 0 6px;}
+  .sale.soldOut .saleName{color:var(--grey);}
+  .listSub{font-size:12px; color:var(--grey); padding:16px 2px 6px; border-top:1px solid var(--line);}
   .monthFoot{display:flex; justify-content:flex-end; gap:14px; margin-top:6px; padding-top:6px; border-top:1px solid var(--line);}
   .actionRow.center{justify-content:center; margin-top:4px;}
 
-  .sthead,.srow{display:grid; grid-template-columns:minmax(140px,1.8fr) .9fr 1fr 1fr 34px; gap:10px; align-items:start;}
-  .sthead{color:var(--grey); font-size:12px; padding:0 4px 8px; border-bottom:1px solid var(--line); margin-bottom:8px;}
-  .srow{padding:8px 4px; border-bottom:1px solid var(--line);}
-  .flabel{display:none;}
   .inp{width:100%; border:1px solid var(--line); border-radius:9px; padding:8px 10px; font-size:15px; color:var(--ink); background:#fff;}
   .sel{width:100%; border:1px solid var(--line); border-radius:9px; padding:8px 10px; font-size:15px; color:var(--ink); background:#fff; cursor:pointer;}
   .rt{text-align:right;}
-  .greyPrice{display:block; text-align:right; color:var(--grey); font-size:14px; padding:8px 4px;}
-  .winst{display:block; text-align:right; font-weight:600; font-size:14px; padding:8px 4px;}
-  .soldTag{display:inline-block; margin-top:6px; font-size:11px; color:var(--rose); background:var(--roseSoft); border-radius:6px; padding:2px 8px;}
-  .soldDate{display:inline-block; margin-top:6px; margin-left:6px; font-size:11px; color:var(--grey);}
-  .remainNote{display:block; text-align:right; font-size:11px; color:var(--grey); margin-top:3px;}
-  .iconBtn{border:1px solid var(--line); background:#fff; color:var(--rose); border-radius:9px; width:32px; height:32px; cursor:pointer; font-size:13px;}
-  .iconBtnSm{border:none; background:transparent; color:var(--grey); cursor:pointer; font-size:15px; padding:6px;}
   .emptyInline{color:var(--grey); text-align:center; padding:18px 8px; font-size:14px;}
 
   .winRow{padding:12px 4px; border-bottom:1px solid var(--line);}
@@ -155,13 +144,6 @@
   .cancelBtn{background:#fff; border:1px solid var(--line); color:var(--ink); padding:9px 16px; border-radius:10px; cursor:pointer; font-size:14px;}
   .deleteBtn{background:var(--rose); border:none; color:#fff; padding:9px 16px; border-radius:10px; cursor:pointer; font-size:14px; font-weight:600;}
 
-  @media (max-width:660px){
-    .sthead{display:none;}
-    .srow{grid-template-columns:1fr 1fr; gap:8px 12px; padding:12px; border:1px solid var(--line); border-radius:14px; margin-bottom:10px; background:#fff;}
-    .srow .cell:first-child{grid-column:1 / -1;}
-    .flabel{display:block; font-size:11px; color:var(--grey); margin-bottom:3px;}
-    .del{grid-column:1 / -1; justify-self:end;}
-  }
 </style>
 </head>
 <body>
@@ -229,6 +211,7 @@
   var dirty = false;
   var saveTimer = null;
   var openRow = null;    /* "maandId:rijId" van de verkoop die open staat (alleen weergave, niet bewaard) */
+  var openArt = null;    /* id van het artikel dat open staat in de stocklijst (alleen weergave) */
   var monthOpen = {};    /* maandId -> true/false; standaard staat enkel de bovenste maand open */
 
   function uid(){ return Math.random().toString(36).slice(2,10); }
@@ -295,7 +278,7 @@
     for(var i=0;i<state.months.length;i++){ if(state.months[i].id===mid){ var nr={id:uid(),articleId:"",qty:"",sold:""}; state.months[i].rows.unshift(nr); openRow=mid+":"+nr.id; monthOpen[mid]=true; break; } }
     render(); scheduleSave();
   }
-  function addArticle(){ state.stock.unshift({id:uid(),name:"",qty:"",buy:""}); render(); scheduleSave(); }
+  function addArticle(){ var na={id:uid(),name:"",qty:"",buy:""}; state.stock.unshift(na); openArt=na.id; render(); scheduleSave(); }
 
   function doDelete(){
     if(!pending) return;
@@ -337,7 +320,7 @@
       h+='</button>';
       if(!open){ h+='</section>'; return; }
 
-      h+='<button class="addSale" data-addrow="'+m.id+'">+ Verkoop toevoegen</button>';
+      h+='<div class="actionRow"><button class="goldBtn" data-addrow="'+m.id+'">+ Verkoop toevoegen</button></div>';
       if(m.rows.length===0){ h+='<div class="emptyInline">Nog geen verkopen deze maand.</div>'; }
       m.rows.forEach(function(r){
         var a=sm[r.articleId]; var bp=a?parseNum(a.buy):0;
@@ -392,21 +375,35 @@
     h+='<section class="card">';
     if(state.stock.length===0){ h+='<div class="emptyInline">Nog geen artikelen \u2014 voeg je eerste product toe.</div>'; }
     else{
-      h+='<div class="sthead"><span>Product</span><span class="rt">Aantal stuks</span><span class="rt">Aankoop/eenheid</span><span class="rt">Totaal verdiend</span><span></span></div>';
       var avail=[], soldA=[];
       state.stock.forEach(function(s){ if(isSoldOut(s.id,sm,sq)) soldA.push(s); else avail.push(s); });
       soldA.sort(function(a,b){ var da=a.soldOutAt||"", db=b.soldOutAt||""; if(da<db) return 1; if(da>db) return -1; return 0; });
-      avail.concat(soldA).forEach(function(s){
+      var one=function(s){
         var rem=remaining(s.id,sm,sq); var sold=isSoldOut(s.id,sm,sq);
-        h+='<div class="srow">';
-        h+='<div class="cell"><span class="flabel">Product</span><input class="inp" data-field="sname" data-sid="'+s.id+'" value="'+escA(s.name)+'" placeholder="Productnaam">'+(sold?'<span class="soldTag">uitverkocht</span>'+(s.soldOutAt?'<span class="soldDate">'+fmtDate(s.soldOutAt)+'</span>':''):'')+'</div>';
-        h+='<div class="cell rt"><span class="flabel">Aantal stuks</span><input class="inp rt" inputmode="decimal" data-field="sqty" data-sid="'+s.id+'" value="'+escA(s.qty)+'" placeholder="0">'+(parseNum(s.qty)>0?'<span class="remainNote" data-srem="'+s.id+'">nog '+rem+' te verkopen</span>':'<span class="remainNote" data-srem="'+s.id+'"></span>')+'</div>';
-        h+='<div class="cell rt"><span class="flabel">Aankoop/eenheid</span><input class="inp rt" inputmode="decimal" data-field="sbuy" data-sid="'+s.id+'" value="'+escA(s.buy)+'" placeholder="\u20ac 0"></div>';
         var e=articleEarned(s.id,sm); var ec=(e>=0)?"var(--win)":"var(--rose)";
-        h+='<div class="cell rt"><span class="flabel">Totaal verdiend</span><span class="winst" data-searn="'+s.id+'" style="color:'+ec+';">'+euro(e)+'</span></div>';
-        h+='<div class="cell del"><button class="iconBtnSm" data-del="article" data-sid="'+s.id+'" title="Artikel verwijderen">\u2715</button></div>';
+        if(openArt!==s.id){
+          h+='<button class="sale'+(sold?' soldOut':'')+'" data-openart="'+s.id+'">';
+          h+='<span class="saleLeft"><span class="saleName">'+(s.name?escA(s.name):'<span class="saleNone">(naamloos)</span>')+'</span>';
+          if(sold) h+='<span class="saleQty">'+(s.soldOutAt?fmtDate(s.soldOutAt):'')+'</span>';
+          else if(parseNum(s.qty)>0) h+='<span class="saleQty">nog '+rem+'/'+escA(s.qty)+'</span>';
+          h+='</span>';
+          h+='<span class="saleAmt"><span class="saleWin" style="color:'+ec+';">'+euro(e)+'</span></span>';
+          h+='</button>';
+          return;
+        }
+        h+='<div class="saleEdit">';
+        h+='<span class="elabel">Product</span><input class="inp" data-field="sname" data-sid="'+s.id+'" value="'+escA(s.name)+'" placeholder="Productnaam">';
+        h+='<div class="editGrid">';
+        h+='<div><span class="elabel">Aantal stuks</span><input class="inp rt" inputmode="decimal" data-field="sqty" data-sid="'+s.id+'" value="'+escA(s.qty)+'" placeholder="0"></div>';
+        h+='<div><span class="elabel">Aankoop/eenheid</span><input class="inp rt" inputmode="decimal" data-field="sbuy" data-sid="'+s.id+'" value="'+escA(s.buy)+'" placeholder="\u20ac 0"></div>';
         h+='</div>';
-      });
+        h+='<div class="editInfo"><span><span data-srem="'+s.id+'">'+(parseNum(s.qty)>0?'nog '+rem+' te verkopen':'')+'</span> \u00b7 verdiend <span class="winstInl" data-searn="'+s.id+'" style="color:'+ec+';">'+euro(e)+'</span></span>';
+        h+='<button class="linkBtn" data-del="article" data-sid="'+s.id+'">verwijder</button></div>';
+        h+='<div class="editDone"><button class="doneBtn" data-closeart="1">Klaar</button></div>';
+        h+='</div>';
+      };
+      avail.forEach(one);
+      if(soldA.length){ h+='<div class="listSub">Uitverkocht ('+soldA.length+')</div>'; soldA.forEach(one); }
     }
     h+='</section>';
     return h;
@@ -497,6 +494,8 @@
     if(b.hasAttribute("data-togglemonth")){ var tm=findMonth(b.getAttribute("data-togglemonth")); if(tm){ monthOpen[tm.id]=!isMonthOpen(tm, state.months.indexOf(tm)); render(); } return; }
     if(b.hasAttribute("data-openrow")){ openRow=b.getAttribute("data-openrow"); render(); return; }
     if(b.hasAttribute("data-closerow")){ openRow=null; render(); return; }
+    if(b.hasAttribute("data-openart")){ openArt=b.getAttribute("data-openart"); render(); return; }
+    if(b.hasAttribute("data-closeart")){ openArt=null; render(); return; }
     if(b.hasAttribute("data-mrename")){ var rm=findMonth(b.getAttribute("data-mrename")); if(rm){ var nl=window.prompt("Nieuwe naam voor deze maand:", rm.label); if(nl && nl.trim()){ rm.label=nl.trim(); render(); scheduleSave(); } } return; }
     var dk=b.getAttribute("data-del");
     if(dk==="month"){ var m=findMonth(b.getAttribute("data-mid")); pending={kind:"month",mid:b.getAttribute("data-mid"),text:'Maand "'+(m?m.label:"")+'" met alle rijen verwijderen?'}; renderModal(); }
