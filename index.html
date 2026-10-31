@@ -151,6 +151,9 @@
   .emptyInline{color:var(--grey); text-align:center; padding:18px 8px; font-size:14px;}
 
   .winRow{padding:12px 4px; border-bottom:1px solid var(--line);}
+  .winToggle{display:block; width:100%; background:transparent; border:none; border-bottom:1px solid var(--line); font:inherit; color:inherit; text-align:left; cursor:pointer;}
+  .acctSales{background:var(--bg); border-radius:12px; padding:2px 10px; margin:6px 0 8px;}
+  .acctSales .sale:first-child{border-top:none;}
   .winTop{display:flex; justify-content:space-between; align-items:baseline;}
   .winMonth{font-family:var(--serif); font-size:20px; font-weight:600; color:var(--plum);}
   .winAmt{font-family:var(--serif); font-size:20px; font-weight:600;}
@@ -238,7 +241,8 @@
   var openRow = null;    /* "maandId:rijId" van de verkoop die open staat (alleen weergave, niet bewaard) */
   var openArt = null;    /* id van het artikel dat open staat in de stocklijst (alleen weergave) */
   var monthOpen = {};
-  var soldOpen = false;  /* blok "Uitverkocht" in de stocklijst open of dicht (alleen weergave) */    /* maandId -> true/false; standaard staat enkel de bovenste maand open */
+  var soldOpen = false;
+  var acctMonthOpen = {}; /* "accountId|maandId" -> true: maand in de tab Accounts opengeklapt (alleen weergave) */  /* blok "Uitverkocht" in de stocklijst open of dicht (alleen weergave) */    /* maandId -> true/false; standaard staat enkel de bovenste maand open */
 
   function uid(){ return Math.random().toString(36).slice(2,10); }
   function parseNum(v){ var n = parseFloat(String(v==null?"":v).replace(",",".")); return isNaN(n)?0:n; }
@@ -514,7 +518,7 @@
       months.forEach(function(m){
         var rs=rowsOf(m); if(!rs.length) return;
         var o=0,w=0,c=0; rs.forEach(function(r){ o+=parseNum(r.sold); w+=rowWinst(r,sm); if(r.articleId) c++; });
-        per.push({label:m.label, o:o, w:w, c:c}); tO+=o; tW+=w; tC+=c; if(Math.abs(w)>maxw) maxw=Math.abs(w);
+        per.push({m:m, rs:rs, label:m.label, o:o, w:w, c:c}); tO+=o; tW+=w; tC+=c; if(Math.abs(w)>maxw) maxw=Math.abs(w);
       });
       h+='<section class="card'+(g.acct?'':' noAcct')+'">';
       h+='<div class="acctHead"><button class="acctName" data-renacct="'+(g.acct?g.id:'_none')+'" title="Naam wijzigen">'+escA(g.name)+'<span class="pencil">✎</span></button><span class="monthTotals"><span class="monthOmzet">'+euro(tO)+'</span><span class="monthWinst">winst '+euro(tW)+' \u00B7 '+nVerk(tC)+'</span></span></div>';
@@ -522,9 +526,21 @@
       per.forEach(function(x){
         var pct=Math.min(100,(Math.abs(x.w)/maxw)*100), wc=(x.w>=0)?"var(--win)":"var(--rose)";
         var fill=(x.w>=0)?"linear-gradient(90deg, var(--goldSoft), var(--gold))":"var(--rose)";
-        h+='<div class="winRow"><div class="winTop"><span class="winMonth">'+escA(x.label)+'</span><span class="winAmt" style="color:'+wc+';">'+euro(x.w)+'</span></div>';
+        var key=(g.id||"_none")+"|"+x.m.id, op=!!acctMonthOpen[key];
+        h+='<button class="winRow winToggle" data-acctmonth="'+key+'"><div class="winTop"><span class="winMonth"><span class="chev'+(op?' on':'')+'">\u25B8</span>'+escA(x.label)+'</span><span class="winAmt" style="color:'+wc+';">'+euro(x.w)+'</span></div>';
         h+='<div class="barTrack"><div class="barFill" style="width:'+pct+'%; background:'+fill+';"></div></div>';
-        h+='<div class="winSub">omzet '+euro(x.o)+' \u00B7 '+nVerk(x.c)+'</div></div>';
+        h+='<div class="winSub">omzet '+euro(x.o)+' \u00B7 '+nVerk(x.c)+'</div></button>';
+        if(op){
+          h+='<div class="acctSales">';
+          x.rs.forEach(function(r){
+            var a=sm[r.articleId], w=rowWinst(r,sm), rc=(w>=0)?"var(--win)":"var(--rose)";
+            h+='<button class="sale" data-gotorow="'+x.m.id+":"+r.id+'">';
+            h+='<span class="saleLeft"><span class="saleName">'+(a?escA(a.name||"(naamloos)"):'<span class="saleNone">Geen artikel</span>')+'</span>'+(r.qty?'<span class="saleQty">'+escA(r.qty)+'\u00d7</span>':'')+'</span>';
+            h+='<span class="saleAmt">'+(r.sold?euro(parseNum(r.sold)):"\u2014")+'<span class="saleWin" style="color:'+rc+';">'+(w>=0?"+":"")+euro(w)+'</span></span>';
+            h+='</button>';
+          });
+          h+='</div>';
+        }
       });
       if(g.acct) h+='<div class="monthFoot"><button class="linkBtn grey" data-del="account" data-aid="'+g.id+'">account verwijderen</button></div>';
       h+='</section>';
@@ -626,6 +642,13 @@
     if(b.hasAttribute("data-addmonth")){ addMonth(); return; }
     if(b.hasAttribute("data-addart")){ addArticle(); return; }
     if(b.hasAttribute("data-addacct")){ addAccount(); return; }
+    if(b.hasAttribute("data-acctmonth")){ var ak=b.getAttribute("data-acctmonth"); acctMonthOpen[ak]=!acctMonthOpen[ak]; render(); return; }
+    if(b.hasAttribute("data-gotorow")){
+      var gr=b.getAttribute("data-gotorow"), gm=gr.split(":")[0];
+      monthOpen[gm]=true; openRow=gr; setTab("verkoop");
+      var ge=document.querySelector('.saleEdit'); if(ge) ge.scrollIntoView({block:"center"});
+      return;
+    }
     if(b.getAttribute("data-renacct")==="_none"){ nameUnassigned(); return; }
     if(b.hasAttribute("data-renacct")){ var ra2=findAccount(b.getAttribute("data-renacct")); if(ra2){ var nn=window.prompt("Nieuwe naam voor dit account:", ra2.name); if(nn && nn.trim()){ ra2.name=nn.trim(); render(); scheduleSave(); } } return; }
     if(b.hasAttribute("data-addrow")){ addRow(b.getAttribute("data-addrow")); return; }
@@ -645,10 +668,13 @@
 
   el("tabs").addEventListener("click", function(e){
     var b=e.target.closest("button"); if(!b) return;
-    tab=b.getAttribute("data-tab");
-    var btns=el("tabs").querySelectorAll(".tab"); for(var i=0;i<btns.length;i++){ btns[i].classList.toggle("on", btns[i]===b); }
-    render();
+    setTab(b.getAttribute("data-tab"));
   });
+  function setTab(t){
+    tab=t;
+    var btns=el("tabs").querySelectorAll(".tab"); for(var i=0;i<btns.length;i++){ btns[i].classList.toggle("on", btns[i].getAttribute("data-tab")===t); }
+    render();
+  }
 
   function renderModal(){
     var m=el("modal");
