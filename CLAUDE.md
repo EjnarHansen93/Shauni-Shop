@@ -29,7 +29,7 @@ Gedeelde gsm-webapp waarmee Ejnar en Shauni hun online doorverkoop bijhouden: aa
 }
 ```
 - `stock[].total` (optioneel) = totaal betaald voor de batch. In de app geef je dit in; `buy` (per stuk) wordt dan berekend als `total / qty` (ook opnieuw bij wijziging van `qty`). Alle winstberekeningen blijven `buy` gebruiken. Oude artikelen zonder `total` houden hun `buy`; het veld toont dan `buy × qty`.
-- `accounts` en `rows[].accountId` zijn optioneel. Een nieuwe verkoop krijgt standaard het laatst gekozen account (localStorage `ss_lastacct`). Account verwijderen maakt `accountId` leeg bij de verkopen.
+- `accounts` en `rows[].accountId` zijn optioneel. Een nieuwe verkoop krijgt standaard het laatst gekozen account (localStorage `ss_lastacct`). Account verwijderen maakt `accountId` leeg bij de verkopen. Potlood naast de naam = hernoemen; bij "Zonder account" maakt het een account aan en zet alle verkopen zonder account erin (`nameUnassigned`).
 - Getallen worden als tekst bewaard; altijd via `parseNum()` lezen (accepteert komma).
 - Berekeningen: winst per rij = `sold − qty × buy` van het gekoppelde artikel; resterende stock = `stock.qty − som(verkochte qty)`; `soldOutAt` wordt automatisch gezet in `syncSoldOut()`.
 - Maandlabels zijn `"<Maand> <jaar>"` met de Nederlandse namen uit `MONTHS`.

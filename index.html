@@ -114,7 +114,9 @@
   .winstInl{font-weight:600;}
   .emptyNote{font-size:13px; color:var(--grey); padding:4px 0;}
   .acctHead{display:flex; align-items:center; gap:10px; padding-bottom:6px; border-bottom:1px solid var(--line);}
-  .acctName{flex:1; min-width:0; font-family:var(--serif); font-size:23px; font-weight:600; color:var(--plum); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .acctName{flex:1; min-width:0; font-family:var(--serif); font-size:23px; font-weight:600; color:var(--plum); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    border:none; background:transparent; padding:0; text-align:left; cursor:pointer;}
+  .pencil{font-family:var(--sans); font-size:15px; color:var(--rose); margin-left:8px; vertical-align:2px;}
   .card.noAcct{background:#F6ECF0; border-style:dashed;}
   .card.noAcct .acctName{color:#8A6B78;}
   .unitNote{text-align:right; margin-top:6px; font-size:13px; color:var(--grey);}
@@ -316,6 +318,13 @@
     if(last && findAccount(last)) return last;
     return state.accounts.length===1 ? state.accounts[0].id : "";
   }
+  /* "Zonder account" een naam geven: maakt een account aan en zet alle verkopen zonder (geldig) account erin */
+  function nameUnassigned(){
+    var nm=window.prompt("Naam voor dit account? Alle verkopen zonder account komen dan bij dit account.", ""); if(!nm || !nm.trim()) return;
+    var ac={ id:uid(), name:nm.trim() }; state.accounts.push(ac);
+    state.months.forEach(function(m){ m.rows.forEach(function(r){ if(!findAccount(r.accountId)) r.accountId=ac.id; }); });
+    render(); scheduleSave();
+  }
   function addAccount(){
     var nm=window.prompt("Naam van het account:", ""); if(!nm || !nm.trim()) return;
     state.accounts.push({ id:uid(), name:nm.trim() }); render(); scheduleSave();
@@ -508,7 +517,7 @@
         per.push({label:m.label, o:o, w:w, c:c}); tO+=o; tW+=w; tC+=c; if(Math.abs(w)>maxw) maxw=Math.abs(w);
       });
       h+='<section class="card'+(g.acct?'':' noAcct')+'">';
-      h+='<div class="acctHead"><span class="acctName">'+escA(g.name)+'</span><span class="monthTotals"><span class="monthOmzet">'+euro(tO)+'</span><span class="monthWinst">winst '+euro(tW)+' \u00B7 '+nVerk(tC)+'</span></span></div>';
+      h+='<div class="acctHead"><button class="acctName" data-renacct="'+(g.acct?g.id:'_none')+'" title="Naam wijzigen">'+escA(g.name)+'<span class="pencil">✎</span></button><span class="monthTotals"><span class="monthOmzet">'+euro(tO)+'</span><span class="monthWinst">winst '+euro(tW)+' \u00B7 '+nVerk(tC)+'</span></span></div>';
       if(per.length===0){ h+='<div class="emptyInline">Nog geen verkopen met dit account.</div>'; }
       per.forEach(function(x){
         var pct=Math.min(100,(Math.abs(x.w)/maxw)*100), wc=(x.w>=0)?"var(--win)":"var(--rose)";
@@ -517,7 +526,7 @@
         h+='<div class="barTrack"><div class="barFill" style="width:'+pct+'%; background:'+fill+';"></div></div>';
         h+='<div class="winSub">omzet '+euro(x.o)+' \u00B7 '+nVerk(x.c)+'</div></div>';
       });
-      if(g.acct) h+='<div class="monthFoot"><button class="linkBtn grey" data-renacct="'+g.id+'">naam wijzigen</button><button class="linkBtn grey" data-del="account" data-aid="'+g.id+'">account verwijderen</button></div>';
+      if(g.acct) h+='<div class="monthFoot"><button class="linkBtn grey" data-del="account" data-aid="'+g.id+'">account verwijderen</button></div>';
       h+='</section>';
     });
     return h;
@@ -617,6 +626,7 @@
     if(b.hasAttribute("data-addmonth")){ addMonth(); return; }
     if(b.hasAttribute("data-addart")){ addArticle(); return; }
     if(b.hasAttribute("data-addacct")){ addAccount(); return; }
+    if(b.getAttribute("data-renacct")==="_none"){ nameUnassigned(); return; }
     if(b.hasAttribute("data-renacct")){ var ra2=findAccount(b.getAttribute("data-renacct")); if(ra2){ var nn=window.prompt("Nieuwe naam voor dit account:", ra2.name); if(nn && nn.trim()){ ra2.name=nn.trim(); render(); scheduleSave(); } } return; }
     if(b.hasAttribute("data-addrow")){ addRow(b.getAttribute("data-addrow")); return; }
     if(b.hasAttribute("data-togglemonth")){ var tm=findMonth(b.getAttribute("data-togglemonth")); if(tm){ monthOpen[tm.id]=!isMonthOpen(tm, state.months.indexOf(tm)); render(); } return; }
