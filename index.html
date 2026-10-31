@@ -63,9 +63,9 @@
 
   /* ---- tabs ---- */
   .tabsWrap{position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line);}
-  .tabs{max-width:900px; margin:0 auto; padding:10px 16px; display:flex; gap:8px;}
+  .tabs{max-width:900px; margin:0 auto; padding:10px 12px; display:flex; gap:4px;}
   .tab{border:none; cursor:pointer; background:transparent; color:var(--plum);
-    padding:8px 16px; border-radius:999px; font-size:15px; font-weight:500;}
+    padding:8px 12px; border-radius:999px; font-size:15px; font-weight:500; white-space:nowrap;}
   .tab.on{background:var(--plum); color:#fff;}
 
   main{max-width:900px; margin:0 auto; padding:16px;}
@@ -112,6 +112,11 @@
   .editGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;}
   .editInfo{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; font-size:13px; color:var(--grey);}
   .winstInl{font-weight:600;}
+  .emptyNote{font-size:13px; color:var(--grey); padding:4px 0;}
+  .acctHead{display:flex; align-items:center; gap:10px; padding-bottom:6px; border-bottom:1px solid var(--line);}
+  .acctName{flex:1; min-width:0; font-family:var(--serif); font-size:23px; font-weight:600; color:var(--plum); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .card.noAcct{background:#F6ECF0; border-style:dashed;}
+  .card.noAcct .acctName{color:#8A6B78;}
   .unitNote{text-align:right; margin-top:6px; font-size:13px; color:var(--grey);}
   .unitNote [data-sunit]{color:var(--plum); font-weight:600;}
   .editDone{text-align:right; margin-top:8px;}
@@ -201,6 +206,7 @@
       <button class="tab on" data-tab="verkoop">Verkoop</button>
       <button class="tab" data-tab="stock">Stocklijst</button>
       <button class="tab" data-tab="winst">Winst</button>
+      <button class="tab" data-tab="accounts">Accounts</button>
     </div>
   </div>
 
@@ -221,7 +227,7 @@
 
   var MONTHS = ["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"];
 
-  var state = { stock:[], months:[] };
+  var state = { stock:[], months:[], accounts:[] };
   var lastUpdatedAt = null;
   var tab = "verkoop";
   var pending = null;
@@ -301,8 +307,18 @@
     var sec=document.querySelector('[data-month="'+nm.id+'"]'); if(sec) sec.scrollIntoView({behavior:"smooth", block:"start"});
   }
   function addRow(mid){
-    for(var i=0;i<state.months.length;i++){ if(state.months[i].id===mid){ var nr={id:uid(),articleId:"",qty:"",sold:""}; state.months[i].rows.unshift(nr); openRow=mid+":"+nr.id; monthOpen[mid]=true; break; } }
+    for(var i=0;i<state.months.length;i++){ if(state.months[i].id===mid){ var nr={id:uid(),articleId:"",qty:"",sold:"",accountId:defaultAccountId()}; state.months[i].rows.unshift(nr); openRow=mid+":"+nr.id; monthOpen[mid]=true; break; } }
     render(); scheduleSave();
+  }
+  function findAccount(aid){ for(var i=0;i<state.accounts.length;i++){ if(state.accounts[i].id===aid) return state.accounts[i]; } return null; }
+  function defaultAccountId(){
+    var last=""; try{ last=localStorage.getItem("ss_lastacct")||""; }catch(e){}
+    if(last && findAccount(last)) return last;
+    return state.accounts.length===1 ? state.accounts[0].id : "";
+  }
+  function addAccount(){
+    var nm=window.prompt("Naam van het account:", ""); if(!nm || !nm.trim()) return;
+    state.accounts.push({ id:uid(), name:nm.trim() }); render(); scheduleSave();
   }
   function addArticle(){ var na={id:uid(),name:"",qty:"",buy:""}; state.stock.unshift(na); openArt=na.id; render(); scheduleSave(); }
 
@@ -312,6 +328,10 @@
     if(p.kind==="month"){ state.months=state.months.filter(function(m){ return m.id!==p.mid; }); }
     else if(p.kind==="row"){ for(var i=0;i<state.months.length;i++){ if(state.months[i].id===p.mid){ state.months[i].rows=state.months[i].rows.filter(function(r){ return r.id!==p.rid; }); break; } } }
     else if(p.kind==="article"){ state.stock=state.stock.filter(function(s){ return s.id!==p.sid; }); }
+    else if(p.kind==="account"){
+      state.accounts=state.accounts.filter(function(a){ return a.id!==p.aid; });
+      state.months.forEach(function(m){ m.rows.forEach(function(r){ if(r.accountId===p.aid) r.accountId=""; }); });
+    }
     pending=null; renderModal(); render(); scheduleSave();
   }
 
@@ -321,6 +341,7 @@
     var v=el("view");
     if(tab==="verkoop") v.innerHTML=buildVerkoop();
     else if(tab==="stock") v.innerHTML=buildStock();
+    else if(tab==="accounts") v.innerHTML=buildAccounts();
     else v.innerHTML=buildWinst();
     updateDerived();
   }
@@ -380,6 +401,13 @@
           h+='<option value="'+s.id+'"'+sel+'>'+escA(nm)+'</option>';
         });
         h+='</select>';
+        h+='<span class="elabel" style="margin-top:10px;">Account</span>';
+        if(state.accounts.length===0){ h+='<div class="emptyNote">Nog geen accounts \u2014 maak er een aan in de tab Accounts.</div>'; }
+        else{
+          h+='<select class="sel" data-field="account" data-mid="'+m.id+'" data-rid="'+r.id+'"><option value="">Kies account\u2026</option>';
+          state.accounts.forEach(function(ac){ h+='<option value="'+ac.id+'"'+(ac.id===r.accountId?' selected':'')+'>'+escA(ac.name)+'</option>'; });
+          h+='</select>';
+        }
         h+='<div class="editGrid">';
         h+='<div><span class="elabel">Aantal</span><input class="inp rt" inputmode="decimal" data-field="qty" data-mid="'+m.id+'" data-rid="'+r.id+'" value="'+escA(r.qty)+'" placeholder="0"></div>';
         h+='<div><span class="elabel">Verkocht voor</span><input class="inp rt" inputmode="decimal" data-field="sold" data-mid="'+m.id+'" data-rid="'+r.id+'" value="'+escA(r.sold)+'" placeholder="\u20ac 0"></div>';
@@ -452,6 +480,46 @@
       }
     }
     h+='</section>';
+    return h;
+  }
+
+  /* maanden van nieuw naar oud (op label), onbekende labels achteraan in hun huidige volgorde */
+  function monthsNewestFirst(){
+    return state.months.map(function(m,i){ var p=parseLabel(m.label); return {m:m, i:i, v:p?p.y*12+p.mi:-1}; })
+      .sort(function(a,b){ if(a.v!==b.v) return b.v-a.v; return a.i-b.i; })
+      .map(function(x){ return x.m; });
+  }
+
+  function nVerk(n){ return n+(n===1?" verkoop":" verkopen"); }
+  function buildAccounts(){
+    var sm=stockMap(), months=monthsNewestFirst();
+    var groups=state.accounts.map(function(a){ return {id:a.id, name:a.name, acct:a}; });
+    var hasNone=state.months.some(function(m){ return m.rows.some(function(r){ return (r.articleId||r.sold) && !findAccount(r.accountId); }); });
+    if(hasNone) groups.push({id:"", name:"Zonder account", acct:null});
+    var h="";
+    h+='<button class="goldBtn wide" data-addacct="1" style="margin-bottom:14px;">+ Nieuw account</button>';
+    if(groups.length===0){ h+='<div class="card"><div class="emptyInline">Nog geen accounts \u2014 voeg je eerste account toe.</div></div>'; return h; }
+    groups.forEach(function(g){
+      var rowsOf=function(m){ return m.rows.filter(function(r){ if(!r.articleId && !r.sold) return false; return g.acct ? r.accountId===g.id : !findAccount(r.accountId); }); };
+      var per=[], tO=0, tW=0, tC=0, maxw=1;
+      months.forEach(function(m){
+        var rs=rowsOf(m); if(!rs.length) return;
+        var o=0,w=0,c=0; rs.forEach(function(r){ o+=parseNum(r.sold); w+=rowWinst(r,sm); if(r.articleId) c++; });
+        per.push({label:m.label, o:o, w:w, c:c}); tO+=o; tW+=w; tC+=c; if(Math.abs(w)>maxw) maxw=Math.abs(w);
+      });
+      h+='<section class="card'+(g.acct?'':' noAcct')+'">';
+      h+='<div class="acctHead"><span class="acctName">'+escA(g.name)+'</span><span class="monthTotals"><span class="monthOmzet">'+euro(tO)+'</span><span class="monthWinst">winst '+euro(tW)+' \u00B7 '+nVerk(tC)+'</span></span></div>';
+      if(per.length===0){ h+='<div class="emptyInline">Nog geen verkopen met dit account.</div>'; }
+      per.forEach(function(x){
+        var pct=Math.min(100,(Math.abs(x.w)/maxw)*100), wc=(x.w>=0)?"var(--win)":"var(--rose)";
+        var fill=(x.w>=0)?"linear-gradient(90deg, var(--goldSoft), var(--gold))":"var(--rose)";
+        h+='<div class="winRow"><div class="winTop"><span class="winMonth">'+escA(x.label)+'</span><span class="winAmt" style="color:'+wc+';">'+euro(x.w)+'</span></div>';
+        h+='<div class="barTrack"><div class="barFill" style="width:'+pct+'%; background:'+fill+';"></div></div>';
+        h+='<div class="winSub">omzet '+euro(x.o)+' \u00B7 '+nVerk(x.c)+'</div></div>';
+      });
+      if(g.acct) h+='<div class="monthFoot"><button class="linkBtn grey" data-renacct="'+g.id+'">naam wijzigen</button><button class="linkBtn grey" data-del="account" data-aid="'+g.id+'">account verwijderen</button></div>';
+      h+='</section>';
+    });
     return h;
   }
 
@@ -539,11 +607,17 @@
       var r=findRow(el2.getAttribute("data-mid"), el2.getAttribute("data-rid"));
       if(r){ r.articleId=el2.value; render(); scheduleSave(); }
     }
+    if(el2.getAttribute("data-field")==="account"){
+      var ra=findRow(el2.getAttribute("data-mid"), el2.getAttribute("data-rid"));
+      if(ra){ ra.accountId=el2.value; if(el2.value){ try{ localStorage.setItem("ss_lastacct", el2.value); }catch(e){} } render(); scheduleSave(); }
+    }
   });
   view.addEventListener("click", function(e){
     var b=e.target.closest("button"); if(!b) return;
     if(b.hasAttribute("data-addmonth")){ addMonth(); return; }
     if(b.hasAttribute("data-addart")){ addArticle(); return; }
+    if(b.hasAttribute("data-addacct")){ addAccount(); return; }
+    if(b.hasAttribute("data-renacct")){ var ra2=findAccount(b.getAttribute("data-renacct")); if(ra2){ var nn=window.prompt("Nieuwe naam voor dit account:", ra2.name); if(nn && nn.trim()){ ra2.name=nn.trim(); render(); scheduleSave(); } } return; }
     if(b.hasAttribute("data-addrow")){ addRow(b.getAttribute("data-addrow")); return; }
     if(b.hasAttribute("data-togglemonth")){ var tm=findMonth(b.getAttribute("data-togglemonth")); if(tm){ monthOpen[tm.id]=!isMonthOpen(tm, state.months.indexOf(tm)); render(); } return; }
     if(b.hasAttribute("data-openrow")){ openRow=b.getAttribute("data-openrow"); render(); return; }
@@ -555,6 +629,7 @@
     var dk=b.getAttribute("data-del");
     if(dk==="month"){ var m=findMonth(b.getAttribute("data-mid")); pending={kind:"month",mid:b.getAttribute("data-mid"),text:'Maand "'+(m?m.label:"")+'" met alle rijen verwijderen?'}; renderModal(); }
     else if(dk==="row"){ pending={kind:"row",mid:b.getAttribute("data-mid"),rid:b.getAttribute("data-rid"),text:"Deze verkoop verwijderen?"}; renderModal(); }
+    else if(dk==="account"){ var da=findAccount(b.getAttribute("data-aid")); pending={kind:"account",aid:b.getAttribute("data-aid"),text:'Account "'+(da?da.name:"")+'" verwijderen? De verkopen blijven bestaan, maar staan dan bij "Zonder account".'}; renderModal(); }
     else if(dk==="article"){ var s=findArticle(b.getAttribute("data-sid")); pending={kind:"article",sid:b.getAttribute("data-sid"),text:'Artikel "'+(s&&s.name?s.name:"(naamloos)")+'" verwijderen?'}; renderModal(); }
   });
 
@@ -585,9 +660,10 @@
   function setStatus(txt){ var s=el("status"); if(s) s.textContent=txt; }
 
   function normalize(d){
-    var out={ stock:[], months:[] };
+    var out={ stock:[], months:[], accounts:[] };
     if(d && Array.isArray(d.stock)) out.stock=d.stock;
     if(d && Array.isArray(d.months)) out.months=d.months;
+    if(d && Array.isArray(d.accounts)) out.accounts=d.accounts;
     return out;
   }
 

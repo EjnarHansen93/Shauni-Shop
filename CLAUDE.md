@@ -10,7 +10,7 @@ Gedeelde gsm-webapp waarmee Ejnar en Shauni hun online doorverkoop bijhouden: aa
 
 ## Opbouw
 - **Alles zit in één bestand: `index.html`** (HTML + CSS + vanilla JS in een IIFE, geen build-stap, geen dependencies).
-- Drie tabs: **Verkoop** (`buildVerkoop`), **Stocklijst** (`buildStock`), **Winst** (`buildWinst`).
+- Vier tabs: **Verkoop** (`buildVerkoop`), **Stocklijst** (`buildStock`), **Winst** (`buildWinst`), **Accounts** (`buildAccounts`: per account de maanden van nieuw naar oud met omzet/winst, plus "Zonder account").
 - Verkoop-tab: het omzetblok bovenaan toont de huidige kalendermaand (`heroMonth()`, anders de bovenste maand); totalen over alle maanden staan op de Winst-tab. Maanden zijn inklapbaar (standaard enkel de bovenste open, `monthOpen`), verkopen staan als één lijn en er is er telkens één open om te bewerken (`openRow`). Stocklijst werkt hetzelfde (`openArt`), twee blokken: "In stock" en "Uitverkocht" (alfabetisch, standaard ingeklapt, `soldOpen`). Die weergavestatus wordt niet bewaard.
 - Na elke wijziging: `render()` + `scheduleSave()` (debounce 700 ms → `doSave`).
 - Sync tussen toestellen: `pull(true)` elke 9 s als de pagina zichtbaar is; lokale cache in localStorage `ss_cache`.
@@ -23,11 +23,13 @@ Gedeelde gsm-webapp waarmee Ejnar en Shauni hun online doorverkoop bijhouden: aa
 ```json
 {
   "stock":  [{ "id": "abc123", "name": "Artikel", "qty": "5", "buy": "12.50", "soldOutAt": "2026-09-01" }],
+  "accounts": [{ "id": "c1", "name": "Vinted Shauni" }],
   "months": [{ "id": "m1", "label": "September 2026",
-               "rows": [{ "id": "r1", "articleId": "abc123", "qty": "1", "sold": "25" }] }]
+               "rows": [{ "id": "r1", "articleId": "abc123", "qty": "1", "sold": "25", "accountId": "c1" }] }]
 }
 ```
 - `stock[].total` (optioneel) = totaal betaald voor de batch. In de app geef je dit in; `buy` (per stuk) wordt dan berekend als `total / qty` (ook opnieuw bij wijziging van `qty`). Alle winstberekeningen blijven `buy` gebruiken. Oude artikelen zonder `total` houden hun `buy`; het veld toont dan `buy × qty`.
+- `accounts` en `rows[].accountId` zijn optioneel. Een nieuwe verkoop krijgt standaard het laatst gekozen account (localStorage `ss_lastacct`). Account verwijderen maakt `accountId` leeg bij de verkopen.
 - Getallen worden als tekst bewaard; altijd via `parseNum()` lezen (accepteert komma).
 - Berekeningen: winst per rij = `sold − qty × buy` van het gekoppelde artikel; resterende stock = `stock.qty − som(verkochte qty)`; `soldOutAt` wordt automatisch gezet in `syncSoldOut()`.
 - Maandlabels zijn `"<Maand> <jaar>"` met de Nederlandse namen uit `MONTHS`.
