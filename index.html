@@ -63,7 +63,8 @@
 
   /* ---- tabs ---- */
   .tabsWrap{position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line);}
-  .tabs{max-width:900px; margin:0 auto; padding:10px 12px; display:flex; gap:4px;}
+  .tabs{max-width:900px; margin:0 auto; padding:10px 12px; display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+  .tabs::-webkit-scrollbar{display:none;}
   .tab{border:none; cursor:pointer; background:transparent; color:var(--plum);
     padding:8px 12px; border-radius:999px; font-size:15px; font-weight:500; white-space:nowrap;}
   .tab.on{background:var(--plum); color:#fff;}
@@ -119,6 +120,24 @@
   .pencil{font-family:var(--sans); font-size:15px; color:var(--rose); margin-left:8px; vertical-align:2px;}
   .card.noAcct{background:#F6ECF0; border-style:dashed;}
   .card.noAcct .acctName{color:#8A6B78;}
+  .jBadge{flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border-radius:50%;
+    background:var(--gold); color:#fff; font-size:10px; font-weight:600; margin-left:6px; align-self:center;}
+  .jimmySwitch{display:inline-flex; align-items:center; gap:8px; margin-top:10px; padding:2px 0; background:transparent;
+    border:none; cursor:pointer; font:inherit; color:inherit; text-align:left;}
+  .jimmySwitch .sw{width:28px; height:16px; border-radius:999px; background:var(--line); position:relative; flex:0 0 auto; transition:background .15s;}
+  .jimmySwitch .sw:after{content:""; position:absolute; left:2px; top:2px; width:12px; height:12px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); transition:left .15s;}
+  .jimmySwitch.on .sw{background:var(--gold);}
+  .jimmySwitch.on .sw:after{left:14px;}
+  .swText{font-size:13px; color:var(--grey);}
+  .jimmySwitch.on .swText{color:var(--plum);}
+  .swText span{font-size:11px; color:var(--grey); margin-left:2px;}
+  .winstInl.gold{color:var(--gold);}
+  .paidTag{font-size:11px; color:var(--rose); margin-top:2px;}
+  .paidTag.paid{color:var(--win);}
+  .jimmyFoot{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-top:6px; padding-top:10px; border-top:1px solid var(--line); font-size:13px;}
+  .jimmyFoot .g{color:var(--grey);}
+  .paidBtn{background:#fff; border:1px solid var(--goldSoft); color:var(--plum); border-radius:10px; padding:7px 12px; font-size:13px; font-weight:600; cursor:pointer;}
+  .paidBtn.on{background:#E3F0E7; border-color:#B9D9C3; color:#2F6040;}
   .unitNote{text-align:right; margin-top:6px; font-size:13px; color:var(--grey);}
   .unitNote [data-sunit]{color:var(--plum); font-weight:600;}
   .editDone{text-align:right; margin-top:8px;}
@@ -211,6 +230,7 @@
       <button class="tab on" data-tab="verkoop">Verkoop</button>
       <button class="tab" data-tab="stock">Stocklijst</button>
       <button class="tab" data-tab="winst">Winst</button>
+      <button class="tab" data-tab="jimmy">Jimmy</button>
       <button class="tab" data-tab="accounts">Accounts</button>
     </div>
   </div>
@@ -242,6 +262,7 @@
   var openArt = null;    /* id van het artikel dat open staat in de stocklijst (alleen weergave) */
   var monthOpen = {};
   var soldOpen = false;
+  var jimmyOpen = {};     /* maandId -> true/false in de tab Jimmy; standaard enkel de bovenste open (alleen weergave) */
   var acctMonthOpen = {}; /* "accountId|maandId" -> true: maand in de tab Accounts opengeklapt (alleen weergave) */  /* blok "Uitverkocht" in de stocklijst open of dicht (alleen weergave) */    /* maandId -> true/false; standaard staat enkel de bovenste maand open */
 
   function uid(){ return Math.random().toString(36).slice(2,10); }
@@ -285,7 +306,10 @@
     var b=parseNum(s.buy), q=parseNum(s.qty);
     return (b>0 && q>0) ? String(Math.round(b*q*100)/100).replace(".",",") : "";
   }
-  function rowWinst(r, sm){ var a=sm[r.articleId]; var bp=a?parseNum(a.buy):0; return parseNum(r.sold) - parseNum(r.qty)*bp; }
+  function rowWinstFull(r, sm){ var a=sm[r.articleId]; var bp=a?parseNum(a.buy):0; return parseNum(r.sold) - parseNum(r.qty)*bp; }
+  /* winst die voor mij telt: bij delen met Jimmy (r.jimmy) de helft; omzet blijft altijd de volledige verkoopprijs */
+  function rowWinst(r, sm){ var w=rowWinstFull(r,sm); return r.jimmy ? w/2 : w; }
+  function rowJimmy(r, sm){ return r.jimmy ? rowWinstFull(r,sm)/2 : 0; }
   function monthOmzet(m){ var t=0; m.rows.forEach(function(r){ t+=parseNum(r.sold); }); return t; }
   function monthWinst(m, sm){ var t=0; m.rows.forEach(function(r){ t+=rowWinst(r,sm); }); return t; }
   function articleEarned(sid, sm){ var t=0; state.months.forEach(function(m){ m.rows.forEach(function(r){ if(r.articleId===sid) t+=rowWinst(r,sm); }); }); return t; }
@@ -355,6 +379,7 @@
     if(tab==="verkoop") v.innerHTML=buildVerkoop();
     else if(tab==="stock") v.innerHTML=buildStock();
     else if(tab==="accounts") v.innerHTML=buildAccounts();
+    else if(tab==="jimmy") v.innerHTML=buildJimmy();
     else v.innerHTML=buildWinst();
     updateDerived();
   }
@@ -399,7 +424,7 @@
         var w=rowWinst(r,sm); var wc=(w>=0)?"var(--win)":"var(--rose)"; var has=(r.sold||r.qty);
         if(openRow!==m.id+":"+r.id){
           h+='<button class="sale" data-openrow="'+m.id+":"+r.id+'">';
-          h+='<span class="saleLeft"><span class="saleName">'+(a?escA(a.name||"(naamloos)"):'<span class="saleNone">Kies artikel\u2026</span>')+'</span>'+(r.qty?'<span class="saleQty">'+escA(r.qty)+'\u00d7</span>':'')+'</span>';
+          h+='<span class="saleLeft"><span class="saleName">'+(a?escA(a.name||"(naamloos)"):'<span class="saleNone">Kies artikel\u2026</span>')+'</span>'+(r.qty?'<span class="saleQty">'+escA(r.qty)+'\u00d7</span>':'')+(r.jimmy?'<span class="jBadge" title="Gedeeld met Jimmy">J</span>':'')+'</span>';
           h+='<span class="saleAmt">'+(r.sold?euro(parseNum(r.sold)):"\u2014")+(has?'<span class="saleWin" style="color:'+wc+';">'+(w>=0?"+":"")+euro(w)+'</span>':'')+'</span>';
           h+='</button>';
           return;
@@ -425,7 +450,8 @@
         h+='<div><span class="elabel">Aantal</span><input class="inp rt" inputmode="decimal" data-field="qty" data-mid="'+m.id+'" data-rid="'+r.id+'" value="'+escA(r.qty)+'" placeholder="0"></div>';
         h+='<div><span class="elabel">Verkocht voor</span><input class="inp rt" inputmode="decimal" data-field="sold" data-mid="'+m.id+'" data-rid="'+r.id+'" value="'+escA(r.sold)+'" placeholder="\u20ac 0"></div>';
         h+='</div>';
-        h+='<div class="editInfo"><span>aankoop '+(a?euro(bp)+'/st':'\u2014')+' \u00b7 winst <span class="winstInl" data-rwinst="'+m.id+":"+r.id+'" style="color:'+wc+';">'+(has?euro(w):"\u2014")+'</span></span>';
+        h+='<button class="jimmySwitch'+(r.jimmy?' on':'')+'" data-togglejimmy="'+m.id+":"+r.id+'"><span class="sw"></span><span class="swText">Winst delen met Jimmy <span>50/50</span></span></button>';
+        h+='<div class="editInfo"><span>aankoop '+(a?euro(bp)+'/st':'\u2014')+' \u00b7 '+(r.jimmy?'jouw winst':'winst')+' <span class="winstInl" data-rwinst="'+m.id+":"+r.id+'" style="color:'+wc+';">'+(has?euro(w):"\u2014")+'</span>'+(r.jimmy?' \u00b7 Jimmy <span class="winstInl gold" data-rjimmy="'+m.id+":"+r.id+'">'+(has?euro(rowJimmy(r,sm)):"\u2014")+'</span>':'')+'</span>';
         h+='<button class="linkBtn" data-del="row" data-mid="'+m.id+'" data-rid="'+r.id+'">verwijder</button></div>';
         h+='<div class="editDone"><button class="doneBtn" data-closerow="1">Klaar</button></div>';
         h+='</div>';
@@ -548,6 +574,47 @@
     return h;
   }
 
+  function buildJimmy(){
+    var sm=stockMap(), list=[];
+    monthsNewestFirst().forEach(function(m){
+      var rs=m.rows.filter(function(r){ return r.jimmy && (r.articleId || r.sold); });
+      if(!rs.length) return;
+      var full=0, j=0; rs.forEach(function(r){ full+=rowWinstFull(r,sm); j+=rowJimmy(r,sm); });
+      list.push({m:m, rs:rs, full:full, j:j});
+    });
+    var hm=heroMonth(), cur=null, open=0;
+    list.forEach(function(x){ if(hm && x.m.id===hm.id) cur=x; if(!x.m.jimmyPaid) open+=x.j; });
+    var h="";
+    h+='<section class="hero">';
+    h+='<div class="heroLabel">Jimmy\u2019s deel '+(hm?escA(hm.label.toLowerCase()):'deze maand')+'</div>';
+    h+='<div class="heroNumber">'+euro(cur?cur.j:0)+'</div>';
+    h+='<div class="heroRule"></div>';
+    h+='<div class="heroStats"><div><div class="miniLabel">Nog te betalen</div><div class="miniValue" style="color:var(--gold);">'+euro(open)+'</div></div>';
+    h+='<div><div class="miniLabel">Verkopen</div><div class="miniValue">'+(cur?cur.rs.length:0)+'</div></div></div></section>';
+    if(!list.length){ h+='<div class="card"><div class="emptyInline">Nog geen gedeelde verkopen. Zet bij een verkoop \u201cWinst delen met Jimmy\u201d aan.</div></div>'; return h; }
+    list.forEach(function(x, i){
+      var op=(x.m.id in jimmyOpen) ? jimmyOpen[x.m.id] : i===0;
+      h+='<section class="card'+(op?'':' closed')+'">';
+      h+='<button class="monthHead'+(op?' isOpen':'')+'" data-jimmymonth="'+x.m.id+'">';
+      h+='<span class="monthTitle"><span class="chev'+(op?' on':'')+'">\u25B8</span>'+escA(x.m.label)+'</span>';
+      h+='<span class="monthTotals"><span class="monthOmzet" style="color:var(--gold);">'+euro(x.j)+'</span><span class="paidTag'+(x.m.jimmyPaid?' paid':'')+'">'+(x.m.jimmyPaid?'betaald':'nog te betalen')+'</span></span>';
+      h+='</button>';
+      if(op){
+        x.rs.forEach(function(r){
+          var a=sm[r.articleId], wf=rowWinstFull(r,sm), jc=(wf>=0)?"var(--gold)":"var(--rose)";
+          h+='<button class="sale" data-gotorow="'+x.m.id+":"+r.id+'">';
+          h+='<span class="saleLeft"><span class="saleName">'+(a?escA(a.name||"(naamloos)"):'<span class="saleNone">Geen artikel</span>')+'</span>'+(r.qty?'<span class="saleQty">'+escA(r.qty)+'\u00d7</span>':'')+'</span>';
+          h+='<span class="saleAmt"><span class="saleQty" style="margin:0 6px 0 0;">'+euro(wf)+' \u2192</span><span style="font-weight:600; color:'+jc+';">'+euro(rowJimmy(r,sm))+'</span></span>';
+          h+='</button>';
+        });
+        h+='<div class="jimmyFoot"><span class="g">winst '+euro(x.full)+' \u00b7 Jimmy '+euro(x.j)+'</span>';
+        h+='<button class="paidBtn'+(x.m.jimmyPaid?' on':'')+'" data-jimmypaid="'+x.m.id+'">'+(x.m.jimmyPaid?'\u2713 Betaald aan Jimmy':'Markeer als betaald')+'</button></div>';
+      }
+      h+='</section>';
+    });
+    return h;
+  }
+
   function buildWinst(){
     var sm=stockMap(), t=totals(sm);
     var maxw=1; state.months.forEach(function(m){ var w=Math.abs(monthWinst(m,sm)); if(w>maxw) maxw=w; });
@@ -591,6 +658,7 @@
       var ew=document.querySelector('[data-winst="'+m.id+'"]'); if(ew) ew.textContent=euro(monthWinst(m,sm));
       m.rows.forEach(function(r){
         var er=document.querySelector('[data-rwinst="'+m.id+":"+r.id+'"]');
+        var ej=document.querySelector('[data-rjimmy="'+m.id+":"+r.id+'"]'); if(ej){ ej.textContent=(r.sold||r.qty)?euro(rowJimmy(r,sm)):"\u2014"; }
         if(er){ var w=rowWinst(r,sm); er.textContent=(r.sold||r.qty)?euro(w):"\u2014"; er.style.color=(w>=0)?"var(--win)":"var(--rose)"; }
       });
       var wa=document.querySelector('[data-wamt="'+m.id+'"]');
@@ -642,6 +710,9 @@
     if(b.hasAttribute("data-addmonth")){ addMonth(); return; }
     if(b.hasAttribute("data-addart")){ addArticle(); return; }
     if(b.hasAttribute("data-addacct")){ addAccount(); return; }
+    if(b.hasAttribute("data-togglejimmy")){ var jp=b.getAttribute("data-togglejimmy").split(":"), jr=findRow(jp[0], jp[1]); if(jr){ if(jr.jimmy) delete jr.jimmy; else jr.jimmy=true; render(); scheduleSave(); } return; }
+    if(b.hasAttribute("data-jimmymonth")){ var jm=b.getAttribute("data-jimmymonth"); jimmyOpen[jm]=!b.classList.contains("isOpen"); render(); return; }
+    if(b.hasAttribute("data-jimmypaid")){ var pm=findMonth(b.getAttribute("data-jimmypaid")); if(pm){ if(pm.jimmyPaid) delete pm.jimmyPaid; else pm.jimmyPaid=true; render(); scheduleSave(); } return; }
     if(b.hasAttribute("data-acctmonth")){ var ak=b.getAttribute("data-acctmonth"); acctMonthOpen[ak]=!acctMonthOpen[ak]; render(); return; }
     if(b.hasAttribute("data-gotorow")){
       var gr=b.getAttribute("data-gotorow"), gm=gr.split(":")[0];
