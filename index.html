@@ -132,12 +132,8 @@
   .jimmySwitch.on .swText{color:var(--plum);}
   .swText span{font-size:11px; color:var(--grey); margin-left:2px;}
   .winstInl.gold{color:var(--gold);}
-  .paidTag{font-size:11px; color:var(--rose); margin-top:2px;}
-  .paidTag.paid{color:var(--win);}
   .jimmyFoot{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-top:6px; padding-top:10px; border-top:1px solid var(--line); font-size:13px;}
   .jimmyFoot .g{color:var(--grey);}
-  .paidBtn{background:#fff; border:1px solid var(--goldSoft); color:var(--plum); border-radius:10px; padding:7px 12px; font-size:13px; font-weight:600; cursor:pointer;}
-  .paidBtn.on{background:#E3F0E7; border-color:#B9D9C3; color:#2F6040;}
   .unitNote{text-align:right; margin-top:6px; font-size:13px; color:var(--grey);}
   .unitNote [data-sunit]{color:var(--plum); font-weight:600;}
   .editDone{text-align:right; margin-top:8px;}
@@ -579,17 +575,17 @@
     monthsNewestFirst().forEach(function(m){
       var rs=m.rows.filter(function(r){ return r.jimmy && (r.articleId || r.sold); });
       if(!rs.length) return;
-      var full=0, j=0; rs.forEach(function(r){ full+=rowWinstFull(r,sm); j+=rowJimmy(r,sm); });
-      list.push({m:m, rs:rs, full:full, j:j});
+      var full=0, j=0, o=0; rs.forEach(function(r){ full+=rowWinstFull(r,sm); j+=rowJimmy(r,sm); o+=parseNum(r.sold); });
+      list.push({m:m, rs:rs, full:full, j:j, o:o});
     });
-    var hm=heroMonth(), cur=null, open=0;
-    list.forEach(function(x){ if(hm && x.m.id===hm.id) cur=x; if(!x.m.jimmyPaid) open+=x.j; });
+    var hm=heroMonth(), cur=null;
+    list.forEach(function(x){ if(hm && x.m.id===hm.id) cur=x; });
     var h="";
     h+='<section class="hero">';
-    h+='<div class="heroLabel">Jimmy\u2019s deel '+(hm?escA(hm.label.toLowerCase()):'deze maand')+'</div>';
+    h+='<div class="heroLabel">Over te dragen aan Jimmy \u00b7 '+(hm?escA(hm.label.toLowerCase()):'deze maand')+'</div>';
     h+='<div class="heroNumber">'+euro(cur?cur.j:0)+'</div>';
     h+='<div class="heroRule"></div>';
-    h+='<div class="heroStats"><div><div class="miniLabel">Nog te betalen</div><div class="miniValue" style="color:var(--gold);">'+euro(open)+'</div></div>';
+    h+='<div class="heroStats"><div><div class="miniLabel">Omzet samen</div><div class="miniValue" style="color:var(--gold);">'+euro(cur?cur.o:0)+'</div></div>';
     h+='<div><div class="miniLabel">Verkopen</div><div class="miniValue">'+(cur?cur.rs.length:0)+'</div></div></div></section>';
     if(!list.length){ h+='<div class="card"><div class="emptyInline">Nog geen gedeelde verkopen. Zet bij een verkoop \u201cWinst delen met Jimmy\u201d aan.</div></div>'; return h; }
     list.forEach(function(x, i){
@@ -597,7 +593,7 @@
       h+='<section class="card'+(op?'':' closed')+'">';
       h+='<button class="monthHead'+(op?' isOpen':'')+'" data-jimmymonth="'+x.m.id+'">';
       h+='<span class="monthTitle"><span class="chev'+(op?' on':'')+'">\u25B8</span>'+escA(x.m.label)+'</span>';
-      h+='<span class="monthTotals"><span class="monthOmzet" style="color:var(--gold);">'+euro(x.j)+'</span><span class="paidTag'+(x.m.jimmyPaid?' paid':'')+'">'+(x.m.jimmyPaid?'betaald':'nog te betalen')+'</span></span>';
+      h+='<span class="monthTotals"><span class="monthOmzet" style="color:var(--gold);">'+euro(x.j)+'</span><span class="monthWinst" style="color:var(--grey);">omzet '+euro(x.o)+'</span></span>';
       h+='</button>';
       if(op){
         x.rs.forEach(function(r){
@@ -607,8 +603,7 @@
           h+='<span class="saleAmt"><span class="saleQty" style="margin:0 6px 0 0;">'+euro(wf)+' \u2192</span><span style="font-weight:600; color:'+jc+';">'+euro(rowJimmy(r,sm))+'</span></span>';
           h+='</button>';
         });
-        h+='<div class="jimmyFoot"><span class="g">winst '+euro(x.full)+' \u00b7 Jimmy '+euro(x.j)+'</span>';
-        h+='<button class="paidBtn'+(x.m.jimmyPaid?' on':'')+'" data-jimmypaid="'+x.m.id+'">'+(x.m.jimmyPaid?'\u2713 Betaald aan Jimmy':'Markeer als betaald')+'</button></div>';
+        h+='<div class="jimmyFoot"><span class="g">omzet samen '+euro(x.o)+' \u00b7 winst '+euro(x.full)+'</span><span>over te dragen <b style="color:var(--gold);">'+euro(x.j)+'</b></span></div>';
       }
       h+='</section>';
     });
@@ -712,7 +707,6 @@
     if(b.hasAttribute("data-addacct")){ addAccount(); return; }
     if(b.hasAttribute("data-togglejimmy")){ var jp=b.getAttribute("data-togglejimmy").split(":"), jr=findRow(jp[0], jp[1]); if(jr){ if(jr.jimmy) delete jr.jimmy; else jr.jimmy=true; render(); scheduleSave(); } return; }
     if(b.hasAttribute("data-jimmymonth")){ var jm=b.getAttribute("data-jimmymonth"); jimmyOpen[jm]=!b.classList.contains("isOpen"); render(); return; }
-    if(b.hasAttribute("data-jimmypaid")){ var pm=findMonth(b.getAttribute("data-jimmypaid")); if(pm){ if(pm.jimmyPaid) delete pm.jimmyPaid; else pm.jimmyPaid=true; render(); scheduleSave(); } return; }
     if(b.hasAttribute("data-acctmonth")){ var ak=b.getAttribute("data-acctmonth"); acctMonthOpen[ak]=!acctMonthOpen[ak]; render(); return; }
     if(b.hasAttribute("data-gotorow")){
       var gr=b.getAttribute("data-gotorow"), gm=gr.split(":")[0];
